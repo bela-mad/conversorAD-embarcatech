@@ -33,15 +33,17 @@ project(conversorAD-embarcatech C CXX ASM)
 # Initialise the Raspberry Pi Pico SDK
 pico_sdk_init()
 
+file(GLOB LIBSOURCES "include/*.c")
+
 # Add executable. Default name is the project name, version 0.1
 
-add_executable(conversorAD-embarcatech conversorAD-embarcatech.c )
+add_executable(conversorAD-embarcatech conversorAD-embarcatech.c ${LIBSOURCES} )
 
 pico_set_program_name(conversorAD-embarcatech "conversorAD-embarcatech")
 pico_set_program_version(conversorAD-embarcatech "0.1")
 
 # Modify the below lines to enable/disable output over UART/USB
-pico_enable_stdio_uart(conversorAD-embarcatech 1)
+pico_enable_stdio_uart(conversorAD-embarcatech 0)
 pico_enable_stdio_usb(conversorAD-embarcatech 1)
 
 # Add the standard library to the build
@@ -55,7 +57,9 @@ target_include_directories(conversorAD-embarcatech PRIVATE
 
 # Add any user requested libraries
 target_link_libraries(conversorAD-embarcatech 
-        
+        hardware_adc
+        hardware_pwm
+        hardware_i2c
         )
 
 pico_add_extra_outputs(conversorAD-embarcatech)
