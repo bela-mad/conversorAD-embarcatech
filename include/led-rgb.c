@@ -18,5 +18,5 @@ void pwm_led_setup(uint led, uint *slice, uint16_t level, bool state_led) {
     pwm_set_clkdiv(*slice, PWM_DIVISOR);   // Define o divisor de clock do PWM
     pwm_set_wrap(*slice, WRAP_PERIOD);          // Configura o valor máximo do contador (período do PWM)
     pwm_set_gpio_level(led, 0);
-    pwm_set_enabled(*slice, state_led);         // Habilita o PWM no slice correspondente ao LED
+    pwm_set_enabled(*slice, true);         // Habilita o PWM no slice correspondente ao LED
 }
