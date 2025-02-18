@@ -11,13 +11,13 @@ void setup_joystick() {
 
 // Função para ler os valores dos eixos do joystick (X e Y)
 void joystick_read_axis(uint16_t *vrx_value, uint16_t *vry_value) {
-    // Leitura do valor do eixo X do joystick
-    adc_select_input(ADC_CHANNEL_0); // Seleciona o canal ADC para o eixo X
-    sleep_us(2);                     // Pequeno delay para estabilidade
-    *vry_value = adc_read();         // Lê o valor do eixo X (0-4095)
-
     // Leitura do valor do eixo Y do joystick
-    adc_select_input(ADC_CHANNEL_1); // Seleciona o canal ADC para o eixo Y
-    sleep_us(2);                     // Pequeno delay para estabilidade
-    *vrx_value = adc_read();         // Lê o valor do eixo Y (0-4095)
+    adc_select_input(ADC_CHANNEL_0); // seleciona o canal ADC para o eixo Y
+    sleep_us(2);                     // pequeno delay para estabilidade
+    *vry_value = adc_read();         // lê o valor do eixo Y (0-4095)
+
+    // Leitura do valor do eixo X do joystick
+    adc_select_input(ADC_CHANNEL_1); // seleciona o canal ADC para o eixo X
+    sleep_us(2);                     // pequeno delay para estabilidade
+    *vrx_value = adc_read();         // lê o valor do eixo X (0-4095)
 }

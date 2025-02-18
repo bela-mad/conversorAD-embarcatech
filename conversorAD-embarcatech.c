@@ -5,7 +5,6 @@
 #include "hardware/pwm.h"
 #include "pico/stdlib.h"
 #include "./include/button.h"
-#include "./include/font.h"
 #include "./include/joystick.h"
 #include "./include/led-rgb.h"
 #include "./include/ssd1306.h"
@@ -20,24 +19,21 @@
 #define DISPLAY_HEIGHT 64
 
 // Declaração de variáveis
-uint16_t led_b_level = 0, led_r_level = 0; // inicialização dos níveis de PWM para os LEDs
-uint slice_led_b, slice_led_r;             // variáveis para armazenar os slices de PWM correspondentes aos LEDs
-absolute_time_t debounce;
-uint32_t last_time = 0;                              // variável para contar o último tempo verificado
-volatile bool state_led = true, state_border = true; // variáveis de estado do led e da borda
 ssd1306_t ssd;
-uint16_t vrx_value, vry_value, sw_value; // variáveis
-int square_x = 64;                       // centraliza quadrado no eixo x
-int square_y = 32;                       // centraliza quadrado no eixo y
+uint32_t last_time = 0;                              // variável para contar o último tempo verificado
+absolute_time_t debounce;
+uint slice_led_b, slice_led_r;                       // variáveis para armazenar os slices de PWM correspondentes aos LEDs
+uint16_t vrx_value, vry_value;                       // variáveis dos valores mai recentes de x e y do joystick
+int square_x = 64, square_y = 32;                    // centraliza quadrado nos eixos x e y
+uint16_t led_b_level = 0, led_r_level = 0;           // inicialização dos níveis de PWM para os LEDs
+volatile bool state_led = true, state_border = true; // variáveis de estado do led e da borda
 
-// Cabeçalho da função de callback do botão
+// Cabeçalho das funções
 void button_irq_handler(uint gpio, uint32_t events);
-void draw_moving_square(ssd1306_t *ssd, int x, int y);
 void update_square_position(int *square_x, int *square_y, uint16_t vrx_value, uint16_t vry_value);
 
 // Função principal
-int main()
-{
+int main() {
     stdio_init_all();
 
     // Inicialização dos pinos
@@ -48,14 +44,8 @@ int main()
     pwm_led_setup(RED_LED_PIN, &slice_led_r, led_r_level, state_led);  // configura o PWM para o LED vermelho
     led_init(GREEN_LED_PIN);
 
-    // Interrupções dos botões A e SW
-    gpio_set_irq_enabled_with_callback(SW, GPIO_IRQ_EDGE_FALL, true, &button_irq_handler);
-    gpio_set_irq_enabled_with_callback(BUTTON_A_PIN, GPIO_IRQ_EDGE_FALL, true, &button_irq_handler);
-
-    debounce = delayed_by_ms(get_absolute_time(), 200); // inicializa o debounce
-
-    i2c_init(I2C_PORT, 400 * 1000); // inicialização do I2C, usando-o em 400KHz
-
+    // Inicialização do I2C e do display OLED
+    i2c_init(I2C_PORT, 400 * 1000);                               // usando-o em 400KHz
     gpio_set_function(I2C_SDA, GPIO_FUNC_I2C);                    // set the GPIO pin function to I2C
     gpio_set_function(I2C_SCL, GPIO_FUNC_I2C);                    // set the GPIO pin function to I2C
     gpio_pull_up(I2C_SDA);                                        // pull up the data line
@@ -64,30 +54,33 @@ int main()
     ssd1306_config(&ssd);                                         // configura o display
     ssd1306_send_data(&ssd);                                      // envia os dados para o display
 
+    // Interrupções dos botões A e SW
+    gpio_set_irq_enabled_with_callback(SW, GPIO_IRQ_EDGE_FALL, true, &button_irq_handler);
+    gpio_set_irq_enabled_with_callback(BUTTON_A_PIN, GPIO_IRQ_EDGE_FALL, true, &button_irq_handler);
+
+    debounce = delayed_by_ms(get_absolute_time(), 200); // inicializa o debounce
+
     // Limpa o display, desenha a borda e envia os dados para serem exibidos
     ssd1306_fill(&ssd, false);
     ssd1306_rect(&ssd, 3, 3, 122, 58, true);
     ssd1306_send_data(&ssd);
 
-    while (true)
-    {
+    while (true) {
         joystick_read_axis(&vrx_value, &vry_value); // lê os valores dos eixos do joystick
 
-        if ((vrx_value >= 2400 || vrx_value <= 2120) && state_led)
-        {
+        // Define intervalo para ativação e só aciona os LEDs se o state_led for true
+        // (intervalo baseado nos valores obtidos no monitor serial para cada coordenada)
+        if ((vrx_value >= 2400 || vrx_value <= 2120) && state_led) {
             led_r_level = abs(vrx_value - 2047) * 2;
-        }
-        else
-        {
+        } else { // caso contrário, mantém o level em 0
             led_r_level = 0;
         }
 
-        if ((vry_value >= 2100 || vry_value <= 1850) && state_led)
-        {
+        // Ocorre o mesmo aqui
+        if ((vry_value >= 2100 || vry_value <= 1850) && state_led) {
             led_b_level = abs(vry_value - 2047) * 2;
         }
-        else
-        {
+        else {
             led_b_level = 0;
         }
 
@@ -100,76 +93,34 @@ int main()
         // Atualiza a posição do quadrado com base nos valores do joystick
         update_square_position(&square_x, &square_y, vrx_value, vry_value);
 
-        if (state_border) 
-        {
+        // Desenha a borda lisa ou de corações de acordo com o state_border 
+        // (modificado na função de callback de interrupção do botão)
+        if (state_border) {
             ssd1306_rect(&ssd, 3, 3, 122, 58, true);
-        }
-        else
-        {
+        } else {
             ssd1306_rect_hearts(&ssd, 3, 3, 122, 58, true);
         }
 
-        // desenha o quadrado de 8x8 pixels
+        // Desenha o quadrado de 8x8 pixels
         ssd1306_rect(&ssd, square_x - 4, square_y - 8, SQUARE_SIZE, SQUARE_SIZE, true);
 
+        // Envia os dados para o display
         ssd1306_send_data(&ssd);
 
-        // Pequeno delay antes da próxima leitura
-        sleep_ms(40);
+        sleep_ms(40);        // pequeno delay antes da próxima leitura
     }
 }
 
-// Função que trata a interrupção do botão
-void button_irq_handler(uint gpio, uint32_t events)
-{
-    if (time_reached(debounce)) // verifica se o tempo de debounce já passou
-    {
-        if (gpio == SW)
-        {
+// Função de callback que trata a interrupção do botão
+void button_irq_handler(uint gpio, uint32_t events) {
+    if (time_reached(debounce)) { // verifica se o tempo de debounce já passou
+        if (gpio == SW) {
             state_border = !state_border;
             gpio_put(GREEN_LED_PIN, !gpio_get(GREEN_LED_PIN)); // alterna o LED verde
         }
-        else if (gpio == BUTTON_A_PIN)
-        {
+        else if (gpio == BUTTON_A_PIN) {
             state_led = !state_led;
         }
         debounce = delayed_by_ms(get_absolute_time(), 200); // atualiza o debounce
-    }
-}
-
-void draw_moving_square(ssd1306_t *ssd, int x, int y)
-{
-    ssd1306_rect(ssd, x - 4, y - 8, SQUARE_SIZE, SQUARE_SIZE, true);
-
-    // Atualiza o display
-    // ssd1306_send_data(ssd);
-}
-
-void update_square_position(int *square_x, int *square_y, uint16_t vrx_value, uint16_t vry_value)
-{
-    // Calcula a nova posição com base nos valores do joystick
-    int delta_y = vrx_value / 32;          // Ajuste da sensibilidade
-    int delta_x = (4095 - vry_value) / 64; // Ajuste da sensibilidade
-
-    // Atualiza as coordenadas do quadrado
-    *square_x = delta_x;
-    *square_y = delta_y;
-
-    // Limita o movimento do quadrado dentro da área da borda (3, 3, 122, 58)
-    if (*square_x < 8)
-    {
-        *square_x = 8;
-    }
-    if (*square_x > 56)
-    { // 122 - 8 (tamanho do quadrado)
-        *square_x = 56;
-    }
-    if (*square_y < 12)
-    {
-        *square_y = 12;
-    }
-    if (*square_y > 124)
-    { // 58 - 8 (tamanho do quadrado)
-        *square_y = 124;
     }
 }

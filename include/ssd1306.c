@@ -1,5 +1,4 @@
 #include "ssd1306.h"
-#include "font.h"
 
 // Funções
 
@@ -158,6 +157,7 @@ void ssd1306_rect(ssd1306_t *ssd, uint8_t top, uint8_t left, uint8_t width, uint
     }
 }
 
+// Função que desenha uma borda de corações
 void ssd1306_rect_hearts(ssd1306_t *ssd, uint8_t top, uint8_t left, uint8_t width, uint8_t height, bool value) {
     const uint8_t spacing = 5; // Espaçamento entre os corações
 
@@ -174,6 +174,7 @@ void ssd1306_rect_hearts(ssd1306_t *ssd, uint8_t top, uint8_t left, uint8_t widt
     }
 }
 
+// Função que desenha um coração 
 void ssd1306_draw_heart(ssd1306_t *ssd, uint8_t x, uint8_t y, bool value) {
     /*
        Padrão do coração:
@@ -274,44 +275,6 @@ void ssd1306_vline(ssd1306_t *ssd, uint8_t x, uint8_t y0, uint8_t y1, bool value
 }
 
 /**
- * @brief Desenha um caractere no display.
- *
- * @param ssd Ponteiro para a estrutura do display.
- * @param c Caractere a ser desenhado.
- * @param x Coordenada X do caractere.
- * @param y Coordenada Y do caractere.
- */
-void ssd1306_draw_char(ssd1306_t *ssd, char c, uint8_t x, uint8_t y) {
-    uint16_t index = 0;
-    char ver = c;
-    if (c >= '0' && c <= '9') {
-        index = (c - '0' + 1) * 8;     // para números
-    }
-    else if (c >= 'A' && c <= 'Z') {
-        index = (c - 'A' + 11) * 8;    // para letras maiúsculas
-    } 
-    else if (c >= 'a' && c <= 'z') {
-        index = (c - 'a' + 37) * 8;    // para letras minúsculas
-    }
-    else if (c == '!') {
-        index = (c - '!' + 63) * 8;    // para '!'
-    }
-    else if (c == ':') {
-        index = (c - ':' + 64) * 8;    // para ':'
-    }
-    else if (c == '?') {
-        index = (c - '?' + 65) * 8;    // para '?'
-    }
-
-    for (uint8_t i = 0; i < 8; ++i) {
-        uint8_t line = font[index + i];
-        for (uint8_t j = 0; j < 8; ++j) {
-            ssd1306_pixel(ssd, x + i, y + j, line & (1 << j));
-        }
-    }
-}
-
-/**
  * @brief Desenha uma string no display.
  *
  * @param ssd Ponteiro para a estrutura do display.
@@ -330,5 +293,31 @@ void ssd1306_draw_string(ssd1306_t *ssd, const char *str, uint8_t x, uint8_t y) 
         if (y + 8 >= ssd->height) {
             break;
         }
+    }
+}
+
+
+// Função que atualiza a posição do quadrado 8x8 de acordo com a posição de x e y do joystick
+void update_square_position(int *square_x, int *square_y, uint16_t vrx_value, uint16_t vry_value) {
+    // Calcula a nova posição com base nos valores do joystick
+    int delta_y = vrx_value / 32;
+    int delta_x = (4095 - vry_value) / 64;
+
+    // Atualiza as coordenadas do quadrado
+    *square_x = delta_x;
+    *square_y = delta_y;
+
+    // Limite do movimento do quadrado dentro da área da borda
+    if (*square_x < 8) {   // limite superior
+        *square_x = 8;
+    }
+    if (*square_x > 56) {  // limite inferior
+        *square_x = 56;
+    }
+    if (*square_y < 12) {  // limite da esquerda
+        *square_y = 12;
+    }
+    if (*square_y > 124) { // limite da direita
+        *square_y = 124;
     }
 }
