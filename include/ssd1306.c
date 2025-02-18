@@ -274,29 +274,6 @@ void ssd1306_vline(ssd1306_t *ssd, uint8_t x, uint8_t y0, uint8_t y1, bool value
         ssd1306_pixel(ssd, x, y, value);
 }
 
-/**
- * @brief Desenha uma string no display.
- *
- * @param ssd Ponteiro para a estrutura do display.
- * @param str String a ser desenhada.
- * @param x Coordenada X inicial da string.
- * @param y Coordenada Y inicial da string.
- */
-void ssd1306_draw_string(ssd1306_t *ssd, const char *str, uint8_t x, uint8_t y) {
-    while (*str) {
-        ssd1306_draw_char(ssd, *str++, x, y);
-        x += 8;
-        if (x + 8 >= ssd->width) {
-            x = 0;
-            y += 8;
-        }
-        if (y + 8 >= ssd->height) {
-            break;
-        }
-    }
-}
-
-
 // Função que atualiza a posição do quadrado 8x8 de acordo com a posição de x e y do joystick
 void update_square_position(int *square_x, int *square_y, uint16_t vrx_value, uint16_t vry_value) {
     // Calcula a nova posição com base nos valores do joystick
