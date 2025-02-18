@@ -6,8 +6,8 @@
 #include "hardware/adc.h"
 
 // Defines
-#define VRX 26         
-#define VRY 27        
+#define VRX 27        
+#define VRY 26      
 #define ADC_CHANNEL_0 0
 #define ADC_CHANNEL_1 1
 
