@@ -36,7 +36,7 @@
 <h3></h3>
 <h2 align="center"> Vídeo :video_camera: </h2>
 <p align="justify"> &emsp;&emsp;&emsp;&emsp; Aqui está o link para o vídeo com uma prática de simulação associada a esta tarefa: </p>
-<p align="center">  </p>
+<p align="center"> https://youtube.com/shorts/p0UosE7wxV4?feature=share </p>
 
 <h2></h2>
 <h2 align="center"> Como utilizar :computer_mouse: </h2>
